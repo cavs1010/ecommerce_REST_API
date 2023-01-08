@@ -103,7 +103,49 @@ const putCustomer = async (req, res, next) => {
     console.error(error);
     return res
       .status(500)
-      .json("There was an error during the update of the user");
+      .json({ error: "There was an error during the update of the user" });
+  }
+};
+
+const deleteCustomer = async (req, res, next) => {
+  const customerId = parseInt(req.params.customerId);
+  const customerNotExist = await checkCustomerExists(customerId);
+  if (customerNotExist) {
+    console.log(customerNotExist);
+    return res.status(400).send({ error: customerNotExist });
+  }
+
+  try {
+    await db.query("DELETE FROM customer WHERE customer.id = $1", [customerId]);
+    return res
+      .status(200)
+      .send(`The customer with id = ${customerId} has been deleted`);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: "There was an error during the delete" });
+  }
+};
+
+const getIndCustomer = async (req, res, next) => {
+  const customerId = parseInt(req.params.customerId);
+  const customerNotExist = await checkCustomerExists(customerId);
+  if (customerNotExist) {
+    console.log(customerNotExist);
+    return res.status(400).send({ error: customerNotExist });
+  }
+
+  try {
+    const results = await db.query(
+      "SELECT customer.email, customer.first_name, customer.last_name, customer.address_id FROM customer WHERE customer.id = $1;",
+      [customerId]
+    );
+    return res.status(200).json(results.rows[0]);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      error: `There was an error during the retrieve of customer with id = ${customerId}`,
+    });
   }
 };
 
@@ -111,6 +153,8 @@ const putCustomer = async (req, res, next) => {
 customerRouter.get("/", getCostumers);
 customerRouter.post("/", postCustomer);
 customerRouter.put("/:customerId", putCustomer);
+customerRouter.delete("/:customerId", deleteCustomer);
+customerRouter.get("/:customerId", getIndCustomer);
 
 /*---ROUTER EXPORT---*/
 module.exports = customerRouter;
