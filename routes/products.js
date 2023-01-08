@@ -18,8 +18,8 @@ const retrieveCategoryName = async (category_id) => {
   }
 };
 
-/*---CONNECTIONS---*/
-const getProduct = (req, res, next) => {
+/*--- ROUTES' HELPERS---*/
+const getProducts = (req, res, next) => {
   db.query(
     "SELECT category.name AS category_name, product.id AS product_id, product.name AS product_name, product.price_unit AS price_unit FROM product INNER JOIN category ON product.category_id = category.id;",
     (error, results) => {
@@ -42,7 +42,7 @@ const postProduct = async (req, res, next) => {
     return res
       .status(201)
       .send(
-        `The product ${name} has been added under the category ${categoryProductName}, with ID: ${results.rows[0].id}.`
+        `The product ${results.rows[0].name} has been added under the category ${categoryProductName}, with ID: ${results.rows[0].id}.`
       );
   } catch (error) {
     console.error(error);
@@ -51,7 +51,7 @@ const postProduct = async (req, res, next) => {
 };
 
 const putProduct = async (req, res, next) => {
-  const productId = parseInt(req.params.id);
+  const productId = parseInt(req.params.productId);
   const { category_id, name, price_unit } = req.body;
   try {
     await db.query(
@@ -70,9 +70,38 @@ const putProduct = async (req, res, next) => {
   }
 };
 
+const deleteProduct = async (req, res, next) => {
+  const productId = parseInt(req.params.productId);
+  try {
+    await db.query("DELETE FROM product WHERE product.id = $1", [productId]);
+    return res
+      .status(200)
+      .send(`The product with id = ${productId} has been deleted`);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "There was an error" });
+  }
+};
+
+const getIndProduct = async (req, res, next) => {
+  const productId = parseInt(req.params.productId);
+  try {
+    const results = await db.query(
+      "SELECT product.id, product.name, product.category_id, category.name AS category_name, product.price_unit, product.create_date, product.update_date FROM product INNER JOIN category ON product.category_id = category.id WHERE product.id = $1;",
+      [productId]
+    );
+    return res.status(200).json(results.rows[0]);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "There was an error" });
+  }
+};
+
 /*---ROUTES---*/
-productsRouter.get("/", getProduct);
+productsRouter.get("/", getProducts);
 productsRouter.post("/", postProduct);
-productsRouter.put("/:id", putProduct);
+productsRouter.put("/:productId", putProduct);
+productsRouter.delete("/:productId", deleteProduct);
+productsRouter.get("/:productId", getIndProduct);
 
 module.exports = productsRouter;
