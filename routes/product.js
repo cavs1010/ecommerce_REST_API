@@ -1,6 +1,6 @@
 /*---IMPORTS---*/
 const express = require("express");
-const productsRouter = express.Router();
+const productRouter = express.Router();
 
 const db = require("../db");
 
@@ -15,6 +15,22 @@ const retrieveCategoryName = async (category_id) => {
   } catch (error) {
     console.error(error);
     return error;
+  }
+};
+
+const checkProductExists = async (productId) => {
+  let errorMessage = "";
+  try {
+    const { rows } = await db.query("SELECT * FROM product WHERE id = $1;", [
+      productId,
+    ]);
+    if (!rows.length) {
+      errorMessage = `The product with id ${productId} does not exist`;
+      return errorMessage;
+    }
+  } catch (error) {
+    errorMessage = "There was an error";
+    return errorMessage;
   }
 };
 
@@ -52,18 +68,41 @@ const postProduct = async (req, res, next) => {
 
 const putProduct = async (req, res, next) => {
   const productId = parseInt(req.params.productId);
+  const productNoExist = await checkProductExists(productId, res);
+  if (productNoExist) {
+    console.log(productNoExist);
+    return res.status(400).send({ error: productNoExist });
+  }
+
   const { category_id, name, price_unit } = req.body;
+  let query = "UPDATE product SET ";
+  let values = [];
+  let i = 1;
+  if (category_id) {
+    query += `category_id = $${i}, `;
+    i += 1;
+    values.push(category_id);
+  }
+  if (name) {
+    query += `name = $${i}, `;
+    i += 1;
+    values.push(name);
+  }
+  if (price_unit) {
+    query += ` price_unit = $${i}, `;
+    i += 1;
+    values.push(price_unit);
+  }
+  query = query.slice(0, -2);
+  query += ` WHERE product.id = $${i};`;
+  values.push(productId);
+
   try {
-    await db.query(
-      "UPDATE product SET category_id = $1, name = $2, price_unit = $3, update_date = now() WHERE id = $4",
-      [category_id, name, price_unit, productId]
-    );
+    await db.query(query, values);
     let categoryProductName = await retrieveCategoryName(category_id);
     return res
       .status(200)
-      .send(
-        `The product with id = ${productId} was updated with a new category ${categoryProductName} (id = ${category_id}), name = ${name}, and price per unit = $${price_unit}`
-      );
+      .send(`The product with id = ${productId} was updated`);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "There was an error" });
@@ -72,6 +111,12 @@ const putProduct = async (req, res, next) => {
 
 const deleteProduct = async (req, res, next) => {
   const productId = parseInt(req.params.productId);
+  const productNoExist = await checkProductExists(productId, res);
+  if (productNoExist) {
+    console.log(productNoExist);
+    return res.status(400).send({ error: productNoExist });
+  }
+
   try {
     await db.query("DELETE FROM product WHERE product.id = $1", [productId]);
     return res
@@ -85,6 +130,12 @@ const deleteProduct = async (req, res, next) => {
 
 const getIndProduct = async (req, res, next) => {
   const productId = parseInt(req.params.productId);
+  const productNoExist = await checkProductExists(productId, res);
+  if (productNoExist) {
+    console.log(productNoExist);
+    return res.status(400).send({ error: productNoExist });
+  }
+
   try {
     const results = await db.query(
       "SELECT product.id, product.name, product.category_id, category.name AS category_name, product.price_unit, product.create_date, product.update_date FROM product INNER JOIN category ON product.category_id = category.id WHERE product.id = $1;",
@@ -98,10 +149,11 @@ const getIndProduct = async (req, res, next) => {
 };
 
 /*---ROUTES---*/
-productsRouter.get("/", getProducts);
-productsRouter.post("/", postProduct);
-productsRouter.put("/:productId", putProduct);
-productsRouter.delete("/:productId", deleteProduct);
-productsRouter.get("/:productId", getIndProduct);
+productRouter.get("/", getProducts);
+productRouter.post("/", postProduct);
+productRouter.put("/:productId", putProduct);
+productRouter.delete("/:productId", deleteProduct);
+productRouter.get("/:productId", getIndProduct);
 
-module.exports = productsRouter;
+/*---ROUTER EXPORT---*/
+module.exports = productRouter;
