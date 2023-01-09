@@ -1,52 +1,27 @@
 /*---IMPORTS---*/
 const express = require("express");
 const productRouter = express.Router();
-
 const db = require("../db");
 
 /*---HELPERS---*/
-const retrieveCategoryName = async (category_id) => {
-  try {
-    let categoryProduct = await db.query(
-      "SELECT category.name FROM category WHERE category.id = $1;",
-      [category_id]
-    );
-    return categoryProduct.rows[0].name;
-  } catch (error) {
-    console.error(error);
-    return error;
-  }
-};
-
-const checkProductExists = async (productId) => {
-  let errorMessage = "";
-  try {
-    const { rows } = await db.query("SELECT * FROM product WHERE id = $1;", [
-      productId,
-    ]);
-    if (!rows.length) {
-      errorMessage = `The product with id ${productId} does not exist`;
-      return errorMessage;
-    }
-  } catch (error) {
-    errorMessage = "There was an error";
-    return errorMessage;
-  }
-};
+const { checkIndexExists } = require("./helpers");
 
 /*--- ROUTES' HELPERS---*/
+// GET
 const getProducts = (req, res, next) => {
   db.query(
     "SELECT category.name AS category_name, product.id AS product_id, product.name AS product_name, product.price_unit AS price_unit FROM product INNER JOIN category ON product.category_id = category.id;",
     (error, results) => {
       if (error) {
-        throw error;
+        console.error(error);
+        return res.status(500).send("There was an error");
       }
       res.status(200).json(results.rows);
     }
   );
 };
 
+// POST
 const postProduct = async (req, res, next) => {
   const { category_id, name, price_unit } = req.body;
   try {
@@ -54,7 +29,6 @@ const postProduct = async (req, res, next) => {
       "INSERT INTO product (category_id, name, price_unit, create_date, update_date) VALUES ($1, $2, $3, now(), now()) RETURNING *;",
       [category_id, name, price_unit]
     );
-    let categoryProductName = await retrieveCategoryName(category_id);
     return res
       .status(201)
       .send(
@@ -62,13 +36,14 @@ const postProduct = async (req, res, next) => {
       );
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "There was an error" });
+    return res.status(500).send("There was an error");
   }
 };
 
+// PUT
 const putProduct = async (req, res, next) => {
   const productId = parseInt(req.params.productId);
-  const productNoExist = await checkProductExists(productId, res);
+  const productNoExist = await checkIndexExists("product", productId);
   if (productNoExist) {
     console.log(productNoExist);
     return res.status(400).send({ error: productNoExist });
@@ -99,19 +74,19 @@ const putProduct = async (req, res, next) => {
 
   try {
     await db.query(query, values);
-    let categoryProductName = await retrieveCategoryName(category_id);
     return res
       .status(200)
       .send(`The product with id = ${productId} was updated`);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "There was an error" });
+    return res.status(500).send("There was an error");
   }
 };
 
+// DELETE
 const deleteProduct = async (req, res, next) => {
   const productId = parseInt(req.params.productId);
-  const productNoExist = await checkProductExists(productId, res);
+  const productNoExist = await checkIndexExists("product", productId);
   if (productNoExist) {
     console.log(productNoExist);
     return res.status(400).send({ error: productNoExist });
@@ -124,13 +99,13 @@ const deleteProduct = async (req, res, next) => {
       .send(`The product with id = ${productId} has been deleted`);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "There was an error" });
+    return res.status(500).send("There was an error");
   }
 };
 
 const getIndProduct = async (req, res, next) => {
   const productId = parseInt(req.params.productId);
-  const productNoExist = await checkProductExists(productId, res);
+  const productNoExist = await checkIndexExists("product", productId);
   if (productNoExist) {
     console.log(productNoExist);
     return res.status(400).send({ error: productNoExist });
@@ -144,7 +119,7 @@ const getIndProduct = async (req, res, next) => {
     return res.status(200).json(results.rows[0]);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "There was an error" });
+    return res.status(500).send("There was an error");
   }
 };
 

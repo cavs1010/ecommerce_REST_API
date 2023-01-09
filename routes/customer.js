@@ -1,26 +1,10 @@
 /*---IMPORTS---*/
 const express = require("express");
 const customerRouter = express.Router();
-
 const db = require("../db");
 
-/*---HELPERS---*/
-const checkCustomerExists = async (customerId) => {
-  let errorMessage = "";
-  try {
-    const { rows } = await db.query("SELECT * FROM customer WHERE id = $1;", [
-      customerId,
-    ]);
-    if (!rows.length) {
-      errorMessage = `The customer with id ${customerId} does not exist`;
-      return errorMessage;
-    }
-  } catch (error) {
-    console.log(error);
-    errorMessage = "There was an error";
-    return errorMessage;
-  }
-};
+//Helpers
+const { checkIndexExists } = require("./helpers");
 
 /*--- ROUTES' HELPERS---*/
 const getCostumers = (req, res, next) => {
@@ -28,13 +12,15 @@ const getCostumers = (req, res, next) => {
     "SELECT customer.id AS id, customer.email AS email, customer.first_name AS first_name, customer.last_name AS last_name FROM customer;",
     (error, results) => {
       if (error) {
-        throw error;
+        console.error(error);
+        return res.status(500).send("There was an error");
       }
       res.status(200).json(results.rows);
     }
   );
 };
 
+// POST
 const postCustomer = async (req, res, next) => {
   const { email, password, first_name, last_name, address_id } = req.body;
   try {
@@ -49,13 +35,14 @@ const postCustomer = async (req, res, next) => {
       );
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "There was an error" });
+    return res.status(500).send("There was an error");
   }
 };
 
+// PUT
 const putCustomer = async (req, res, next) => {
   const customerId = parseInt(req.params.customerId);
-  const customerNotExist = await checkCustomerExists(customerId);
+  const customerNotExist = await checkIndexExists("customer", customerId);
   if (customerNotExist) {
     console.log(customerNotExist);
     return res.status(400).send({ error: customerNotExist });
@@ -101,15 +88,14 @@ const putCustomer = async (req, res, next) => {
       .send(`The user with id ${customerId} has been updated`);
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ error: "There was an error during the update of the user" });
+    return res.status(500).send("There was an error");
   }
 };
 
+// DELETE
 const deleteCustomer = async (req, res, next) => {
   const customerId = parseInt(req.params.customerId);
-  const customerNotExist = await checkCustomerExists(customerId);
+  const customerNotExist = await checkIndexExists("customer", customerId);
   if (customerNotExist) {
     console.log(customerNotExist);
     return res.status(400).send({ error: customerNotExist });
@@ -121,15 +107,15 @@ const deleteCustomer = async (req, res, next) => {
       .status(200)
       .send(`The customer with id = ${customerId} has been deleted`);
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: "There was an error during the delete" });
+    console.error(error);
+    return res.status(500).send("There was an error");
   }
 };
 
-const getIndCustomer = async (req, res, next) => {
+// GET info customer
+const getInfoCustomer = async (req, res, next) => {
   const customerId = parseInt(req.params.customerId);
-  const customerNotExist = await checkCustomerExists(customerId);
+  const customerNotExist = await checkIndexExists("customer", customerId);
   if (customerNotExist) {
     console.log(customerNotExist);
     return res.status(400).send({ error: customerNotExist });
@@ -143,9 +129,7 @@ const getIndCustomer = async (req, res, next) => {
     return res.status(200).json(results.rows[0]);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({
-      error: `There was an error during the retrieve of customer with id = ${customerId}`,
-    });
+    return res.status(500).send("There was an error");
   }
 };
 
@@ -154,7 +138,7 @@ customerRouter.get("/", getCostumers);
 customerRouter.post("/", postCustomer);
 customerRouter.put("/:customerId", putCustomer);
 customerRouter.delete("/:customerId", deleteCustomer);
-customerRouter.get("/:customerId", getIndCustomer);
+customerRouter.get("/:customerId", getInfoCustomer);
 
 /*---ROUTER EXPORT---*/
 module.exports = customerRouter;

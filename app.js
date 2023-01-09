@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 
 const productRouter = require("./routes/product");
 const customerRouter = require("./routes/customer");
+const routers_cart = require("./routes/cart");
 const cartRouter = require("./routes/cart");
 
 const app = express();
@@ -15,6 +16,7 @@ app.use(bodyParser.json());
 app.use("/product", productRouter);
 app.use("/customer", customerRouter);
 app.use("/cart", cartRouter);
+
 
 app.get("/", (req, res) => {
   res.json({ info: "It is ready to use" });
