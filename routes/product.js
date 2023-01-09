@@ -4,7 +4,7 @@ const productRouter = express.Router();
 const db = require("../db");
 
 /*---HELPERS---*/
-const { checkIndexExists } = require("./helpers");
+const { checkIndexExists, validateProductId } = require("./helpers");
 
 /*--- ROUTES' HELPERS---*/
 // GET
@@ -43,11 +43,6 @@ const postProduct = async (req, res, next) => {
 // PUT
 const putProduct = async (req, res, next) => {
   const productId = parseInt(req.params.productId);
-  const productNoExist = await checkIndexExists("product", productId);
-  if (productNoExist) {
-    console.log(productNoExist);
-    return res.status(400).send({ error: productNoExist });
-  }
 
   const { category_id, name, price_unit } = req.body;
   let query = "UPDATE product SET ";
@@ -86,11 +81,6 @@ const putProduct = async (req, res, next) => {
 // DELETE
 const deleteProduct = async (req, res, next) => {
   const productId = parseInt(req.params.productId);
-  const productNoExist = await checkIndexExists("product", productId);
-  if (productNoExist) {
-    console.log(productNoExist);
-    return res.status(400).send({ error: productNoExist });
-  }
 
   try {
     await db.query("DELETE FROM product WHERE product.id = $1", [productId]);
@@ -105,11 +95,6 @@ const deleteProduct = async (req, res, next) => {
 
 const getIndProduct = async (req, res, next) => {
   const productId = parseInt(req.params.productId);
-  const productNoExist = await checkIndexExists("product", productId);
-  if (productNoExist) {
-    console.log(productNoExist);
-    return res.status(400).send({ error: productNoExist });
-  }
 
   try {
     const results = await db.query(
@@ -126,9 +111,9 @@ const getIndProduct = async (req, res, next) => {
 /*---ROUTES---*/
 productRouter.get("/", getProducts);
 productRouter.post("/", postProduct);
-productRouter.put("/:productId", putProduct);
-productRouter.delete("/:productId", deleteProduct);
-productRouter.get("/:productId", getIndProduct);
+productRouter.put("/:productId", validateProductId, putProduct);
+productRouter.delete("/:productId", validateProductId, deleteProduct);
+productRouter.get("/:productId", validateProductId, getIndProduct);
 
 /*---ROUTER EXPORT---*/
 module.exports = productRouter;

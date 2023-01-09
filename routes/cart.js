@@ -4,7 +4,11 @@ const cartRouter = express.Router();
 const db = require("../db");
 
 //Helpers
-const { checkIndexExists, retrieveInformationGivenId } = require("./helpers");
+const {
+  checkIndexExists,
+  retrieveInformationGivenId,
+  validateCustomerId,
+} = require("./helpers");
 
 /*--- ROUTES' HELPERS---*/
 // GET
@@ -23,11 +27,6 @@ const getCarts = async (req, res, next) => {
 // GET cart by customer id
 const getCartByCustomer = async (req, res, next) => {
   const customerId = parseInt(req.params.customerId);
-  const customerNotExist = await checkIndexExists("customer", customerId);
-  if (customerNotExist) {
-    console.log(customerNotExist);
-    return res.status(400).send({ error: customerNotExist });
-  }
 
   try {
     const results = await db.query(
@@ -44,11 +43,6 @@ const getCartByCustomer = async (req, res, next) => {
 //DELETE
 const deleteCartByCustomer = async (req, res, next) => {
   const customerId = parseInt(req.params.customerId);
-  const customerNotExist = await checkIndexExists("customer", customerId);
-  if (customerNotExist) {
-    console.log(customerNotExist);
-    return res.status(400).send({ error: customerNotExist });
-  }
 
   const cartId = await retrieveInformationGivenId(
     "id",
@@ -73,11 +67,6 @@ const deleteCartByCustomer = async (req, res, next) => {
 // POST product
 const postCartByCustomer = async (req, res, next) => {
   const customerId = parseInt(req.params.customerId);
-  const customerNotExist = await checkIndexExists("customer", customerId);
-  if (customerNotExist) {
-    console.log(customerNotExist);
-    return res.status(400).send({ error: customerNotExist });
-  }
 
   const cartId = await retrieveInformationGivenId(
     "id",
@@ -127,11 +116,14 @@ const postCartByCustomer = async (req, res, next) => {
   }
 };
 
+// PUT item in a cart
+// const putItemInCart = async(re);
+
 /*---ROUTES---*/
 cartRouter.get("/", getCarts);
-cartRouter.get("/:customerId", getCartByCustomer);
-cartRouter.delete("/:customerId", deleteCartByCustomer);
-cartRouter.post("/:customerId", postCartByCustomer);
+cartRouter.get("/:customerId", validateCustomerId, getCartByCustomer);
+cartRouter.delete("/:customerId", validateCustomerId, deleteCartByCustomer);
+cartRouter.post("/:customerId", validateCustomerId, postCartByCustomer);
 
 /*---ROUTER EXPORT---*/
 module.exports = cartRouter;

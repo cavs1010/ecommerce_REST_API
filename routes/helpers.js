@@ -2,38 +2,6 @@
 const db = require("../db");
 
 /*---HELPERS---*/
-const checkProductExists = async (productId) => {
-  let errorMessage = "";
-  try {
-    const { rows } = await db.query("SELECT * FROM product WHERE id = $1;", [
-      productId,
-    ]);
-    if (!rows.length) {
-      errorMessage = `The product with id ${productId} does not exist`;
-      return errorMessage;
-    }
-  } catch (error) {
-    errorMessage = "There was an error";
-    return errorMessage;
-  }
-};
-
-const checkCustomerExists = async (customerId) => {
-  let errorMessage = "";
-  try {
-    const { rows } = await db.query("SELECT * FROM customer WHERE id = $1;", [
-      customerId,
-    ]);
-    if (!rows.length) {
-      errorMessage = `The customer with id ${customerId} does not exist`;
-      return errorMessage;
-    }
-  } catch (error) {
-    console.log(error);
-    errorMessage = "There was an error";
-    return errorMessage;
-  }
-};
 
 const retrieveInformationGivenId = async (
   columnRetrieved,
@@ -72,10 +40,30 @@ const checkIndexExists = async (tableName, indexToCheck) => {
   }
 };
 
+const validateCustomerId = async (req, res, next) => {
+  const customerId = parseInt(req.params.customerId);
+  const customerNotExist = await checkIndexExists("customer", customerId);
+  if (customerNotExist) {
+    console.log(customerNotExist);
+    return res.status(400).send({ error: customerNotExist });
+  }
+  next();
+};
+
+const validateProductId = async (req, res, next) => {
+  const productId = parseInt(req.params.productId);
+  const productNoExist = await checkIndexExists("product", productId);
+  if (productNoExist) {
+    console.log(productNoExist);
+    return res.status(400).send({ error: productNoExist });
+  }
+  next();
+};
+
 /*---EXPORTS---*/
 const helpers = {
-  checkProductExists,
-  checkCustomerExists,
+  validateCustomerId,
+  validateProductId,
   retrieveInformationGivenId,
   checkIndexExists,
 };

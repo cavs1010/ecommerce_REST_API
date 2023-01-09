@@ -4,7 +4,7 @@ const customerRouter = express.Router();
 const db = require("../db");
 
 //Helpers
-const { checkIndexExists } = require("./helpers");
+const { checkIndexExists, validateCustomerId } = require("./helpers");
 
 /*--- ROUTES' HELPERS---*/
 const getCostumers = (req, res, next) => {
@@ -42,11 +42,6 @@ const postCustomer = async (req, res, next) => {
 // PUT
 const putCustomer = async (req, res, next) => {
   const customerId = parseInt(req.params.customerId);
-  const customerNotExist = await checkIndexExists("customer", customerId);
-  if (customerNotExist) {
-    console.log(customerNotExist);
-    return res.status(400).send({ error: customerNotExist });
-  }
 
   const { email, password, first_name, last_name, address_id } = req.body;
   let query = "UPDATE customer SET ";
@@ -95,11 +90,6 @@ const putCustomer = async (req, res, next) => {
 // DELETE
 const deleteCustomer = async (req, res, next) => {
   const customerId = parseInt(req.params.customerId);
-  const customerNotExist = await checkIndexExists("customer", customerId);
-  if (customerNotExist) {
-    console.log(customerNotExist);
-    return res.status(400).send({ error: customerNotExist });
-  }
 
   try {
     await db.query("DELETE FROM customer WHERE customer.id = $1", [customerId]);
@@ -115,11 +105,6 @@ const deleteCustomer = async (req, res, next) => {
 // GET info customer
 const getInfoCustomer = async (req, res, next) => {
   const customerId = parseInt(req.params.customerId);
-  const customerNotExist = await checkIndexExists("customer", customerId);
-  if (customerNotExist) {
-    console.log(customerNotExist);
-    return res.status(400).send({ error: customerNotExist });
-  }
 
   try {
     const results = await db.query(
@@ -136,9 +121,9 @@ const getInfoCustomer = async (req, res, next) => {
 /*---ROUTES---*/
 customerRouter.get("/", getCostumers);
 customerRouter.post("/", postCustomer);
-customerRouter.put("/:customerId", putCustomer);
-customerRouter.delete("/:customerId", deleteCustomer);
-customerRouter.get("/:customerId", getInfoCustomer);
+customerRouter.put("/:customerId", validateCustomerId, putCustomer);
+customerRouter.delete("/:customerId", validateCustomerId, deleteCustomer);
+customerRouter.get("/:customerId", validateCustomerId, getInfoCustomer);
 
 /*---ROUTER EXPORT---*/
 module.exports = customerRouter;
