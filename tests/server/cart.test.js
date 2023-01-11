@@ -1,8 +1,7 @@
-const { assert, AssertionError } = require("chai");
+const { assert } = require("chai");
 const request = require("supertest");
 const app = require("../../app");
 const db = require("../../db");
-//const express = require("express");
 
 beforeEach(async () => {
   await db.query("BEGIN;");
