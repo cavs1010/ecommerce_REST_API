@@ -45,7 +45,7 @@ const validateCustomerId = async (req, res, next) => {
   const customerNotExist = await checkIndexExists("customer", customerId);
   if (customerNotExist) {
     console.log(customerNotExist);
-    return res.status(400).send({ error: customerNotExist });
+    return res.status(404).send({ error: customerNotExist });
   }
   next();
 };
@@ -55,7 +55,20 @@ const validateProductId = async (req, res, next) => {
   const productNoExist = await checkIndexExists("product", productId);
   if (productNoExist) {
     console.log(productNoExist);
-    return res.status(400).send({ error: productNoExist });
+    return res.status(404).send({ error: productNoExist });
+  }
+  next();
+};
+
+const validateCart_ProductId = async (req, res, next) => {
+  const cartProductId = parseInt(req.params.cartProductId);
+  const cartProductNoExist = await checkIndexExists(
+    "cart_product",
+    cartProductId
+  );
+  if (cartProductNoExist) {
+    console.log(cartProductNoExist);
+    return res.status(404).send({ error: cartProductNoExist });
   }
   next();
 };
@@ -64,6 +77,7 @@ const validateProductId = async (req, res, next) => {
 const helpers = {
   validateCustomerId,
   validateProductId,
+  validateCart_ProductId,
   retrieveInformationGivenId,
   checkIndexExists,
 };

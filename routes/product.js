@@ -4,7 +4,11 @@ const productRouter = express.Router();
 const db = require("../db");
 
 /*---HELPERS---*/
-const { checkIndexExists, validateProductId } = require("./helpers");
+const {
+  checkIndexExists,
+  validateProductId,
+  retrieveInformationGivenId,
+} = require("./helpers");
 
 /*--- ROUTES' HELPERS---*/
 // GET
@@ -24,6 +28,12 @@ const getProducts = (req, res, next) => {
 // POST
 const postProduct = async (req, res, next) => {
   const { category_id, name, price_unit } = req.body;
+  const categoryProductName = await retrieveInformationGivenId(
+    "name",
+    "category",
+    "id",
+    category_id
+  );
   try {
     const results = await db.query(
       "INSERT INTO product (category_id, name, price_unit, create_date, update_date) VALUES ($1, $2, $3, now(), now()) RETURNING *;",
