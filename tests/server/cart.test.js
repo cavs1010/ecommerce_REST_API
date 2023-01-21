@@ -25,17 +25,20 @@ describe("GET /cart", () => {
 
 describe("PUT /cart/:customerId/:cartProductId", () => {
   const expectedQuantityValue = 10;
+  const customerId = 26;
+  const cartProductId = 29;
   it("Updates a product in a certain cart", async () => {
     const res = await request(app)
-      .put("/cart/45/34")
+      .put(`/cart/${customerId}/${cartProductId}`)
       .send({ quantity: expectedQuantityValue });
     assert.equal(res.status, 200);
     assert.equal(
       res.text,
-      `The quantity of Shoes in the cart id = 11 has been updated to ${expectedQuantityValue}`
+      `The quantity of Table in the cart id = 6 has been updated to ${expectedQuantityValue}`
     );
     const realValue = await db.query(
-      "SELECT quantity FROM cart_product WHERE id = 34 "
+      "SELECT quantity FROM cart_product WHERE id = $1 ",
+      [cartProductId]
     );
     assert.equal(realValue.rows[0].quantity, expectedQuantityValue);
   });
@@ -54,8 +57,8 @@ describe("PUT /cart/:customerId/:cartProductId", () => {
 });
 
 describe("DELETE /cart/:customerId/:cartProductId", () => {
-  const customerId = 45;
-  const cartProductId = 34;
+  const customerId = 26;
+  const cartProductId = 29;
   it("A product in a certain cart has been successfully deleted", async () => {
     const res = await request(app).delete(
       `/cart/${customerId}/${cartProductId}`

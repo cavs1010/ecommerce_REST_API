@@ -1,4 +1,5 @@
 /*---IMPORTS---*/
+const { response } = require("../app");
 const db = require("../db");
 
 /*---HELPERS---*/
@@ -23,7 +24,7 @@ const retrieveInformationGivenId = async (
 };
 
 const checkIndexExists = async (tableName, indexToCheck) => {
-  let error = "";
+  let errorMessage = "";
   try {
     const { rows } = await db.query(
       `SELECT * FROM ${tableName} ` + "WHERE id = $1;",
@@ -73,6 +74,39 @@ const validateCart_ProductId = async (req, res, next) => {
   next();
 };
 
+const validateOrderIdGivenCustomerID = async (req, res, next) => {
+  const customerId = parseInt(req.params.customerId);
+  const orderId = parseInt(req.params.orderId);
+  const response = await db.query(
+    "SELECT * FROM previous_order WHERE customer_id = $1 AND id = $2;",
+    [customerId, orderId]
+  );
+  if (!response.rows.length) {
+    console.log(
+      `The order with id ${orderId} doesn't exist for customer with id ${customerId}`
+    );
+    return res.status(404).send({ error: "There was an error" });
+  }
+  next();
+};
+
+const validateProductIdGivenCustomerIDAndOrderId = async (req, res, next) => {
+  const customerId = parseInt(req.params.customerId);
+  const orderId = parseInt(req.params.orderId);
+  const orderProductId = parseInt(req.params.orderProductId);
+  const response = await db.query(
+    "SELECT order_product.id AS order_product_id, order_product.order_id AS order_id, previous_order.customer_id AS customer_id FROM order_product INNER JOIN previous_order ON previous_order.id = order_product.order_id WHERE order_product.id = $1 AND order_product.order_id = $2 AND previous_order.customer_id = $3;",
+    [orderProductId, orderId, customerId]
+  );
+  if (!response.rows.length) {
+    console.log(
+      `The order_product_id ${orderProductId} doesn't exist for order ${orderId} and customer ${customerId}`
+    );
+    return res.status(404).send({ error: "There was an error" });
+  }
+  next();
+};
+
 /*---EXPORTS---*/
 const helpers = {
   validateCustomerId,
@@ -80,5 +114,7 @@ const helpers = {
   validateCart_ProductId,
   retrieveInformationGivenId,
   checkIndexExists,
+  validateOrderIdGivenCustomerID,
+  validateProductIdGivenCustomerIDAndOrderId,
 };
 module.exports = helpers;

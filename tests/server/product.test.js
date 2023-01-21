@@ -3,6 +3,13 @@ const request = require("supertest");
 const app = require("../../app");
 const db = require("../../db");
 
+beforeEach(async () => {
+  await db.query("BEGIN;");
+});
+afterEach(async () => {
+  await db.query("ROLLBACK;");
+});
+
 describe("GET /product", () => {
   it("Retrieves a list of products", async () => {
     const res = await request(app).get("/product");
@@ -15,13 +22,6 @@ describe("GET /product", () => {
     const products = result.rows;
     assert.deepEqual(res.body, products);
   });
-});
-
-beforeEach(async () => {
-  await db.query("BEGIN;");
-});
-afterEach(async () => {
-  await db.query("ROLLBACK;");
 });
 
 describe("POST /product", () => {

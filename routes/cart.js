@@ -207,16 +207,16 @@ cartRouter.delete(
   validateCart_ProductId,
   deleteProductFromCart
 );
-cartRouter.get("/", getCarts);
-cartRouter.get("/:customerId", validateCustomerId, getCartByCustomer);
-cartRouter.delete("/:customerId", validateCustomerId, deleteCartByCustomer);
-cartRouter.post("/:customerId", validateCustomerId, postCartByCustomer);
 cartRouter.put(
   "/:customerId/:cartProductId",
   validateCustomerId,
   validateCart_ProductId,
   putItemInCart
 );
+cartRouter.get("/", getCarts);
+cartRouter.get("/:customerId", validateCustomerId, getCartByCustomer);
+cartRouter.delete("/:customerId", validateCustomerId, deleteCartByCustomer);
+cartRouter.post("/:customerId", validateCustomerId, postCartByCustomer);
 
 /*---ROUTER EXPORT---*/
 module.exports = cartRouter;
