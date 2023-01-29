@@ -173,6 +173,9 @@ const updateProductInOrderForCustomer = async (req, res, send) => {
   const orderId = parseInt(req.params.orderId);
   const orderProductId = parseInt(req.params.orderProductId);
   const { newQuantity } = req.body;
+  if (newQuantity <= 0) {
+    return res.status(406).send("The new quantity cannot be negative or zero");
+  }
   const productId = await retrieveInformationGivenId(
     "product_id",
     "order_product",

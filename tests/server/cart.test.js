@@ -2,6 +2,7 @@ const { assert } = require("chai");
 const request = require("supertest");
 const app = require("../../app");
 const db = require("../../db");
+const { retrieveInformationGivenId } = require("../../routes/helpers");
 
 beforeEach(async () => {
   await db.query("BEGIN;");
@@ -9,6 +10,15 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await db.query("ROLLBACK");
+  await db.query(
+    "SELECT SETVAL('previous_order_id_seq',  (SELECT MAX(id) FROM previous_order));"
+  );
+  await db.query(
+    "SELECT SETVAL('cart_product_id_seq',  (SELECT MAX(id) FROM cart_product));"
+  );
+  await db.query(
+    "SELECT SETVAL('order_product_id_seq',  (SELECT MAX(id) FROM order_product));"
+  );
 });
 
 describe("GET /cart", () => {
@@ -75,6 +85,64 @@ describe("DELETE /cart/:customerId/:cartProductId", () => {
   });
   it("A product in a certain cart was not deleted because the cartProductId did'nt exist", async () => {
     const res = await request(app).delete(`/cart/${customerId}/9999`);
+    assert.equal(res.status, 404);
+  });
+});
+
+describe("POST /cart/:customerId/checkout", async () => {
+  const correctCustomerId = 45;
+  const cartId = 11;
+  const numberProduct = 2;
+  const customerEmail = "cavs1010@gmail.com";
+  let res;
+  let newOrderId;
+
+  beforeEach(async () => {
+    res = await request(app).post(`/cart/${correctCustomerId}/checkout`);
+  });
+
+  it("A cart has been successfully checked out", async () => {
+    assert.equal(res.status, 200);
+    assert.equal(
+      res.text,
+      `The cart with id ${cartId}, for customer (${customerEmail}) has been checked out.`
+    );
+  });
+  it("The cart has become an order", async () => {
+    const order_created = await db.query(
+      "SELECT * FROM previous_order ORDER BY id DESC LIMIT 1"
+    );
+    newOrderId = order_created.rows[0].id;
+
+    assert.equal(order_created.rows[0].customer_id, correctCustomerId);
+    assert.equal(order_created.rows[0].status, "pending");
+  });
+  it("The items associated to cartId have been eliminated from table cart_product", async () => {
+    const items_cart_product = await db.query(
+      "SELECT * FROM cart_product WHERE cart_id = $1",
+      [cartId]
+    );
+    assert.equal(items_cart_product.rows.length, 0);
+  });
+  it("Products have been correctly added to the associated order", async () => {
+    const products_order = await db.query(
+      "SELECT * FROM order_product WHERE order_id = $1",
+      [newOrderId]
+    );
+    assert.equal(products_order.rows.length, 2);
+  });
+});
+
+describe("POST /cart/:customerId/checkout -> POSSIBLE ERRORS", async () => {
+  it("If the car has no product, it should'nt do anything", async () => {
+    const customerIdNoProducts = 21;
+    res = await request(app).post(`/cart/${customerIdNoProducts}/checkout`);
+    assert.equal(res.status, 400);
+    assert.equal(res.text, "The cart cannot do checkout because is empty");
+  });
+  it("The customer doesn't exist", async () => {
+    const customerId = 999;
+    res = await request(app).post(`/cart/${customerId}/checkout`);
     assert.equal(res.status, 404);
   });
 });

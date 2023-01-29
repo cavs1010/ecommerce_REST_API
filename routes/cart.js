@@ -200,6 +200,74 @@ const deleteProductFromCart = async (req, res, next) => {
   }
 };
 
+// POST a cart to checkout
+const postCartCheckOut = async (req, res, err) => {
+  const customerId = parseInt(req.params.customerId);
+  try {
+    const cartId = await retrieveInformationGivenId(
+      "id",
+      "cart",
+      "customer_id",
+      customerId
+    );
+    const productsCart = await db.query(
+      "SELECT * FROM cart_product WHERE cart_id = $1",
+      [cartId]
+    );
+    // Check that the cart is not empty
+    const productToOrder = productsCart.rows;
+    if (productToOrder.length == 0) {
+      return res
+        .status(400)
+        .send("The cart cannot do checkout because is empty");
+    }
+
+    let response = await db.query(
+      "UPDATE cart SET last_modified = NOW() WHERE customer_id = $1 RETURNING *;",
+      [customerId]
+    );
+    const customerEmail = await retrieveInformationGivenId(
+      "email",
+      "customer",
+      "id",
+      response.rows[0].customer_id
+    );
+    const shippingAddress = await retrieveInformationGivenId(
+      "address_id",
+      "customer",
+      "id",
+      response.rows[0].customer_id
+    );
+
+    let newOrder = await db.query(
+      "INSERT INTO previous_order (customer_id, date_purchase, status, shipping_address) VALUES($1, NOW(), $2, $3) RETURNING *",
+      [response.rows[0].customer_id, "pending", shippingAddress]
+    );
+    const newOrderId = newOrder.rows[0].id;
+    await db.query("DELETE FROM cart_product WHERE cart_id = $1", [cartId]);
+
+    // Adding products into the order recently created:
+    for (let i = 0; i < productToOrder.length; i++) {
+      const data = productToOrder[i];
+      const sql =
+        "INSERT INTO order_product (product_id, quantity, order_id) VALUES ($1, $2, $3)";
+      const values = [data.productId, data.quantity, newOrderId];
+      await db.query(sql, values);
+    }
+
+    return res
+      .status(200)
+      .send(
+        `The cart with id ${response.rows[0].id}, for customer (${customerEmail}) has been checked out.`
+      );
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .send("There was an error during the delete of the cart");
+  }
+};
+
 /*---ROUTES---*/
 cartRouter.delete(
   "/:customerId/:cartProductId",
@@ -207,15 +275,16 @@ cartRouter.delete(
   validateCart_ProductId,
   deleteProductFromCart
 );
+cartRouter.delete("/:customerId", validateCustomerId, deleteCartByCustomer);
 cartRouter.put(
   "/:customerId/:cartProductId",
   validateCustomerId,
   validateCart_ProductId,
   putItemInCart
 );
-cartRouter.get("/", getCarts);
 cartRouter.get("/:customerId", validateCustomerId, getCartByCustomer);
-cartRouter.delete("/:customerId", validateCustomerId, deleteCartByCustomer);
+cartRouter.get("/", getCarts);
+cartRouter.post("/:customerId/checkout", validateCustomerId, postCartCheckOut);
 cartRouter.post("/:customerId", validateCustomerId, postCartByCustomer);
 
 /*---ROUTER EXPORT---*/

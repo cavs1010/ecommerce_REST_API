@@ -314,5 +314,14 @@ describe("PUT order/:customerId/:orderId/:orderProductId", async () => {
       .send({ newQuantity: newQuantity });
     assert.equal(res.status, 404);
   });
-  it("It doesn't update a product quantity because the neq quantity specified is negative or zero", async () => {});
+  it("It doesn't update a product quantity because the quantity specified is negative or zero", async () => {
+    const customerId = 24;
+    const orderId = 4;
+    const orderProductId = 21;
+    const newQuantity = -19;
+    const res = await request(app)
+      .put(`/order/${customerId}/${orderId}/${orderProductId}`)
+      .send({ newQuantity: newQuantity });
+    assert.equal(res.status, 406);
+  });
 });
