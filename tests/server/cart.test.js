@@ -9,7 +9,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await db.query("ROLLBACK");
+  await db.query("ROLLBACK;");
   await db.query(
     "SELECT SETVAL('previous_order_id_seq',  (SELECT MAX(id) FROM previous_order));"
   );

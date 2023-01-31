@@ -4,10 +4,14 @@ const customerRouter = express.Router();
 const db = require("../db");
 
 //Helpers
-const { checkIndexExists, validateCustomerId } = require("./helpers");
+const {
+  checkIndexExists,
+  validateCustomerId,
+  checkThatEmailDoesNotExist,
+} = require("./helpers");
 
 /*--- ROUTES' HELPERS---*/
-const getCostumers = (req, res, next) => {
+const getCustomers = (req, res, next) => {
   db.query(
     "SELECT customer.id AS id, customer.email AS email, customer.first_name AS first_name, customer.last_name AS last_name FROM customer;",
     (error, results) => {
@@ -119,8 +123,8 @@ const getInfoCustomer = async (req, res, next) => {
 };
 
 /*---ROUTES---*/
-customerRouter.get("/", getCostumers);
-customerRouter.post("/", postCustomer);
+customerRouter.get("/", getCustomers);
+customerRouter.post("/", checkThatEmailDoesNotExist, postCustomer);
 customerRouter.put("/:customerId", validateCustomerId, putCustomer);
 customerRouter.delete("/:customerId", validateCustomerId, deleteCustomer);
 customerRouter.get("/:customerId", validateCustomerId, getInfoCustomer);

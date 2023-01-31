@@ -107,6 +107,18 @@ const validateProductIdGivenCustomerIDAndOrderId = async (req, res, next) => {
   next();
 };
 
+const checkThatEmailDoesNotExist = async (req, res, next) => {
+  const userEmail = req.body.email;
+  const checkEmail = await db.query(
+    "SELECT * FROM customer WHERE email = $1;",
+    [userEmail]
+  );
+  if (checkEmail.rows.length != 0) {
+    return res.status(400).send({ error: "Email already exist" });
+  }
+  next();
+};
+
 /*---EXPORTS---*/
 const helpers = {
   validateCustomerId,
@@ -116,5 +128,6 @@ const helpers = {
   checkIndexExists,
   validateOrderIdGivenCustomerID,
   validateProductIdGivenCustomerIDAndOrderId,
+  checkThatEmailDoesNotExist,
 };
 module.exports = helpers;
