@@ -23,14 +23,14 @@ describe("GET /customer", () => {
   });
 });
 
-describe("POST /customer", () => {
+describe("POST /customer/register", () => {
   const first_name = "Andrew";
   const last_name = "Michaels";
   let email = "andrew_michaels@example.com";
   const addres_id = 9;
   const password = "My_password";
   it("Creates a new customer", async () => {
-    const res = await request(app).post("/customer").send({
+    const res = await request(app).post("/customer/register").send({
       email: email,
       password: password,
       first_name: first_name,
@@ -45,7 +45,7 @@ describe("POST /customer", () => {
   });
   it("A customer cannot be registrated if the email already exists in the database", async () => {
     email = "user1@example.com";
-    const res = await request(app).post("/customer").send({
+    const res = await request(app).post("/customer/register").send({
       email: email,
       password: password,
       first_name: first_name,
@@ -109,5 +109,20 @@ describe("GET /customer/:customerId", () => {
     customerIdToCheck = 999;
     const res = await request(app).get(`/customer/${customerIdToCheck}`);
     assert.equal(res.status, 404);
+  });
+});
+
+describe("POST /customer/login", () => {
+  let userEmail = "user1@example.com";
+  let userPassword = "password1";
+  it("An user has successfully logged", async () => {
+    const res = await request(app)
+      .post(`/customer/login`)
+      .send({ email: userEmail, userPassword });
+    assert.equal(res.status, 200);
+    assert.equal(
+      res.body.message,
+      `You have been successfully logged with username ${userEmail}`
+    );
   });
 });

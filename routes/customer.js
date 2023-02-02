@@ -1,7 +1,9 @@
 /*---IMPORTS---*/
 const express = require("express");
 const customerRouter = express.Router();
+const bcrypt = require("bcrypt");
 const db = require("../db");
+const passport = require("passport");
 
 //Helpers
 const {
@@ -27,10 +29,12 @@ const getCustomers = (req, res, next) => {
 // POST
 const postCustomer = async (req, res, next) => {
   const { email, password, first_name, last_name, address_id } = req.body;
+  const salt = await bcrypt.genSalt(10);
+  const hashPassword = await bcrypt.hash(password, salt);
   try {
     const results = await db.query(
       "INSERT INTO customer (email, password, first_name, last_name, address_id) VALUES ($1, $2, $3, $4, $5) RETURNING *;",
-      [email, password, first_name, last_name, address_id]
+      [email, hashPassword, first_name, last_name, address_id]
     );
     return res
       .status(201)
@@ -122,9 +126,19 @@ const getInfoCustomer = async (req, res, next) => {
   }
 };
 
+// POST Customer Login
+const logCustomer = async (req, res, next) => {
+  console.log("HOLAAA");
+  return res.status(200).send("Hola");
+};
+
 /*---ROUTES---*/
 customerRouter.get("/", getCustomers);
-customerRouter.post("/", checkThatEmailDoesNotExist, postCustomer);
+// customerRouter.post("/login", (req, res, next) => {
+//   console.log("Holaaa");
+//   return res.status(400).send("All good");
+// });
+customerRouter.post("/register", checkThatEmailDoesNotExist, postCustomer);
 customerRouter.put("/:customerId", validateCustomerId, putCustomer);
 customerRouter.delete("/:customerId", validateCustomerId, deleteCustomer);
 customerRouter.get("/:customerId", validateCustomerId, getInfoCustomer);
