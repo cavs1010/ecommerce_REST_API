@@ -3,7 +3,7 @@ const express = require("express");
 const customerRouter = express.Router();
 const bcrypt = require("bcrypt");
 const db = require("../db");
-const passport = require("passport");
+const passport = require("../auth/passport");
 
 //Helpers
 const {
@@ -127,17 +127,23 @@ const getInfoCustomer = async (req, res, next) => {
 };
 
 // POST Customer Login
+// TODO: Delete the console.logs
 const logCustomer = async (req, res, next) => {
-  console.log("HOLAAA");
-  return res.status(200).send("Hola");
+  passport.authenticate("local", { failureRedirect: "/customer" });
+  console.log("Inside logCustomer Function");
+  next();
+};
+
+const functiontrial = async (req, res, next) => {
+  console.log("Inside functiontrial");
+  const { email, password } = req.body;
+  console.log(`Login successful with email ${email} and password ${password}`);
+  return res.status(200).send("Login successfully");
 };
 
 /*---ROUTES---*/
 customerRouter.get("/", getCustomers);
-// customerRouter.post("/login", (req, res, next) => {
-//   console.log("Holaaa");
-//   return res.status(400).send("All good");
-// });
+customerRouter.post("/login", logCustomer, functiontrial);
 customerRouter.post("/register", checkThatEmailDoesNotExist, postCustomer);
 customerRouter.put("/:customerId", validateCustomerId, putCustomer);
 customerRouter.delete("/:customerId", validateCustomerId, deleteCustomer);
