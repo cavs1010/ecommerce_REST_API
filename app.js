@@ -12,7 +12,6 @@ const orderRouter = require("./routes/order");
 
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
-//const localStrategy = require("./auth/localStrategy");
 
 const app = express();
 const PORT = process.env.PORT;
@@ -36,6 +35,7 @@ passport.serializeUser((user, done) => {
 
 //passport.deserializeUser;
 
+
 //Passport Local Strategy
 passport.use(
   new LocalStrategy({ usernameField: "email" }, (email, password, done) => {
@@ -56,18 +56,7 @@ app.get("/", (req, res) => {
   res.json({ info: "It is ready to use" });
 });
 
-// passport.use("local", localStrategy);
-// app.post(
-//   "/customer/login",
-//   passport.authenticate(
-//     "local",
-//     { failureRedirect: "/customer" },
-//     function (req, res) {
-//       console.log("HOLA");
-//       return res.status(200).send("Holaaaas");
-//     }
-//   )
-// );
+
 app.post(
   "/customer/login",
   passport.authenticate("local", { failureRedirect: "/customer" }),
