@@ -2,7 +2,9 @@ require("dotenv").config();
 
 const express = require("express");
 const session = require("express-session");
+const store = new session.MemoryStore();
 const bodyParser = require("body-parser");
+const passport = require("./auth/passport");
 
 const productRouter = require("./routes/product");
 const customerRouter = require("./routes/customer");
@@ -18,9 +20,12 @@ app.use(
     secret: "ThisIsASecretKeyForSigningSessionIDCookies",
     resave: false,
     saveUninitialized: false,
+    store,
   })
 );
 app.use(bodyParser.json());
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use("/product", productRouter);
 app.use("/customer", customerRouter);

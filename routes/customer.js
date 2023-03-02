@@ -14,6 +14,7 @@ const {
 
 /*--- ROUTES' HELPERS---*/
 const getCustomers = (req, res, next) => {
+  console.log(req.session);
   db.query(
     "SELECT customer.id AS id, customer.email AS email, customer.first_name AS first_name, customer.last_name AS last_name FROM customer;",
     (error, results) => {
@@ -24,6 +25,8 @@ const getCustomers = (req, res, next) => {
       res.status(200).json(results.rows);
     }
   );
+  //console.log(req.sessionStore.sessions);
+  //console.log(res.req);
 };
 
 // POST
@@ -127,23 +130,23 @@ const getInfoCustomer = async (req, res, next) => {
 };
 
 // POST Customer Login
-// TODO: Delete the console.logs
-const logCustomer = async (req, res, next) => {
-  passport.authenticate("local", { failureRedirect: "/customer" });
-  console.log("Inside logCustomer Function");
-  next();
-};
-
-const functiontrial = async (req, res, next) => {
-  console.log("Inside functiontrial");
+const loginCustomer = async (req, res, next) => {
   const { email, password } = req.body;
-  console.log(`Login successful with email ${email} and password ${password}`);
-  return res.status(200).send("Login successfully");
+  return res.status(200).send({
+    message: `You have been successfully logged with username ${email}`,
+  });
 };
 
 /*---ROUTES---*/
 customerRouter.get("/", getCustomers);
-customerRouter.post("/login", logCustomer, functiontrial);
+customerRouter.post(
+  "/login",
+  passport.authenticate("local", {
+    failureRedirect: "/register",
+  }),
+  loginCustomer
+);
+
 customerRouter.post("/register", checkThatEmailDoesNotExist, postCustomer);
 customerRouter.put("/:customerId", validateCustomerId, putCustomer);
 customerRouter.delete("/:customerId", validateCustomerId, deleteCustomer);

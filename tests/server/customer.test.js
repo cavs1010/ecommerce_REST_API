@@ -1,9 +1,13 @@
+const chai = require("chai");
 const { assert } = require("chai");
+const chaiHttp = require("chai-http");
 const request = require("supertest");
 const app = require("../../app");
 const db = require("../../db");
+const expect = require("chai").expect;
 const retrieveInformationGivenId = require("../../routes/helpers");
 
+chai.use(chaiHttp);
 beforeEach(async () => {
   await db.query("BEGIN;");
 });
@@ -112,17 +116,29 @@ describe("GET /customer/:customerId", () => {
   });
 });
 
+//TODO I to check that the session is active when the user has successfully login
 describe("POST /customer/login", () => {
   let userEmail = "user1@example.com";
   let userPassword = "password1";
   it("An user has successfully logged", async () => {
     const res = await request(app)
       .post(`/customer/login`)
-      .send({ email: userEmail, userPassword });
+      .send({ email: userEmail, password: userPassword });
     assert.equal(res.status, 200);
     assert.equal(
       res.body.message,
       `You have been successfully logged with username ${userEmail}`
     );
+
+    const res_2_trial = await request(app).get("/customer");
+    //console.log(res_2_trial.req);
+  });
+  it("User doesn't exist in the database", async () => {
+    userEmail = "Thisemail@notexist";
+    const res = await request(app)
+      .post("/customer/login")
+      .send({ email: userEmail, password: userPassword });
+    assert.equal(res.status, 302);
+    assert.equal(res.headers.location, "/register");
   });
 });
